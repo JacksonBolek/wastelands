@@ -113,6 +113,34 @@ fn renderDebugPanel(texts: []const [:0]const u8) void {
     }
 }
 
+fn renderDebugInfo(gameWorld: GameWorld) void {
+    const debugCharacterRenderLoc = convertToString(
+        "Character render position: ({d:.},{d:.})",
+        .{ gameWorld.charRenderPos.x, gameWorld.charRenderPos.y },
+    );
+    defer std.heap.page_allocator.free(debugCharacterRenderLoc);
+
+    const debugCharacterGameworldLoc = convertToString(
+        "Character game world position: ({d:.},{d:.})",
+        .{ gameWorld.charWorldPos.x, gameWorld.charWorldPos.y },
+    );
+    defer std.heap.page_allocator.free(debugCharacterGameworldLoc);
+
+    const debugViewPortStart = convertToString(
+        "Viewport coords: ({d:.},{d:.})",
+        .{ gameWorld.viewPort.x, gameWorld.viewPort.y },
+    );
+    defer std.heap.page_allocator.free(debugViewPortStart);
+
+    const debugPrintouts = [_][:0]const u8{
+        debugCharacterGameworldLoc,
+        debugCharacterRenderLoc,
+        debugViewPortStart,
+    };
+
+    renderDebugPanel(&debugPrintouts);
+}
+
 fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
     const middleOfViewPort = (gameWorld.viewPort.width + 1) / 2;
     const lowerBoundViewPort = @as(f32, @floatFromInt(middleOfViewPort));
@@ -232,30 +260,6 @@ pub fn main() anyerror!void {
 
         rl.drawCircleV(gameWorld.charRenderPos, 12, rl.Color.red);
 
-        const debugCharacterRenderLoc = convertToString(
-            "Character render position: ({d:.},{d:.})",
-            .{ gameWorld.charRenderPos.x, gameWorld.charRenderPos.y },
-        );
-        defer std.heap.page_allocator.free(debugCharacterRenderLoc);
-
-        const debugCharacterGameworldLoc = convertToString(
-            "Character game world position: ({d:.},{d:.})",
-            .{ gameWorld.charWorldPos.x, gameWorld.charWorldPos.y },
-        );
-        defer std.heap.page_allocator.free(debugCharacterGameworldLoc);
-
-        const debugViewPortStart = convertToString(
-            "Viewport coords: ({d:.},{d:.})",
-            .{ gameWorld.viewPort.x, gameWorld.viewPort.y },
-        );
-        defer std.heap.page_allocator.free(debugViewPortStart);
-
-        const debugPrintouts = [_][:0]const u8{
-            debugCharacterGameworldLoc,
-            debugCharacterRenderLoc,
-            debugViewPortStart,
-        };
-
-        renderDebugPanel(&debugPrintouts);
+        renderDebugInfo(gameWorld);
     }
 }
