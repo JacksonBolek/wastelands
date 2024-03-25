@@ -2,6 +2,9 @@
 
 const rl = @import("raylib");
 const std = @import("std");
+const znoise = @cImport({
+    @cInclude("FastNoiseLite.h");
+});
 
 const DEBUGFLAG: u8 = 1;
 const TILESIZE: f32 = 32;
@@ -178,6 +181,7 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
 }
 
 pub fn main() anyerror!void {
+
     // Initialization
     //--------------------------------------------------------------------------------------
     const screenWidth = 1052;
@@ -251,7 +255,6 @@ pub fn main() anyerror!void {
 
         // Render
         rl.beginDrawing();
-
         defer rl.endDrawing();
 
         rl.clearBackground(rl.Color.white);

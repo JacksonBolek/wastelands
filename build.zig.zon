@@ -1,5 +1,5 @@
 .{
-    .name = "raylib-zig",
+    .name = "my_game",
     .version = "0.1.1",
     .dependencies = .{
         .raylib = .{
