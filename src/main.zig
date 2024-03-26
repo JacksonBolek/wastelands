@@ -153,39 +153,61 @@ fn renderDebugInfo(gameWorld: GameWorld) void {
 
 fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
     // TODO there is a bug where if you go the right edge of the screen and then back the viewport will not change
-    const middleOfViewPort = (gameWorld.viewPort.width + 1) / 2;
-    const lowerBoundViewPort = @as(f32, @floatFromInt(middleOfViewPort));
+    const middleOfViewPort = ((gameWorld.viewPort.width + 1) / 2);
+    const lowerBoundViewPort = @as(f32, @floatFromInt(middleOfViewPort - 1));
     const upperBoundViewPort = @as(f32, @floatFromInt(gameWorld.width - middleOfViewPort));
+    std.debug.print(
+        "upperBoundViewPort: {d}\nlowerBoundViewPort: {d}\nmiddleOfViewPort: {d}\n\n",
+        .{ upperBoundViewPort, lowerBoundViewPort, middleOfViewPort },
+    );
+
+    std.debug.print(
+        "Before update viewPort: ({},{})\nBefore update characterPosition: ({d},{d})\n\n",
+        .{ gameWorld.viewPort.x, gameWorld.viewPort.y, gameWorld.charWorldPos.x, gameWorld.charWorldPos.y },
+    );
 
     if (moveDir.x == 1) {
-        if (gameWorld.charWorldPos.x >= lowerBoundViewPort and gameWorld.charWorldPos.x <= upperBoundViewPort) {
-            gameWorld.viewPort.x += 1;
-        } else {
-            gameWorld.charRenderPos.x += TILESIZE;
+        if (gameWorld.charWorldPos.x != @as(f32, @floatFromInt(gameWorld.width - 1))) {
+            if (gameWorld.charWorldPos.x >= lowerBoundViewPort and gameWorld.charWorldPos.x < upperBoundViewPort) {
+                gameWorld.viewPort.x += 1;
+            } else {
+                gameWorld.charRenderPos.x += TILESIZE;
+            }
+            gameWorld.charWorldPos.x += 1;
         }
-        gameWorld.charWorldPos.x += 1;
     } else if (moveDir.y == 1) {
-        if (gameWorld.charWorldPos.y >= lowerBoundViewPort and gameWorld.charWorldPos.y <= upperBoundViewPort) {
-            gameWorld.viewPort.y += 1;
-        } else {
-            gameWorld.charRenderPos.y += TILESIZE;
+        if (gameWorld.charWorldPos.y != @as(f32, @floatFromInt(gameWorld.height - 1))) {
+            if (gameWorld.charWorldPos.y >= lowerBoundViewPort and gameWorld.charWorldPos.y < upperBoundViewPort) {
+                gameWorld.viewPort.y += 1;
+            } else {
+                gameWorld.charRenderPos.y += TILESIZE;
+            }
+            gameWorld.charWorldPos.y += 1;
         }
-        gameWorld.charWorldPos.y += 1;
     } else if (moveDir.x == -1) {
-        if (gameWorld.charWorldPos.x > lowerBoundViewPort and gameWorld.charWorldPos.x < upperBoundViewPort) {
-            gameWorld.viewPort.x -= 1;
-        } else {
-            gameWorld.charRenderPos.x -= TILESIZE;
+        if (gameWorld.charWorldPos.x != 0) {
+            if (gameWorld.charWorldPos.x > lowerBoundViewPort and gameWorld.charWorldPos.x <= upperBoundViewPort) {
+                gameWorld.viewPort.x -= 1;
+            } else {
+                gameWorld.charRenderPos.x -= TILESIZE;
+            }
+            gameWorld.charWorldPos.x -= 1;
         }
-        gameWorld.charWorldPos.x -= 1;
     } else if (moveDir.y == -1) {
-        if (gameWorld.charWorldPos.y > lowerBoundViewPort and gameWorld.charWorldPos.y < upperBoundViewPort) {
-            gameWorld.viewPort.y -= 1;
-        } else {
-            gameWorld.charRenderPos.y -= TILESIZE;
+        if (gameWorld.charWorldPos.y != 0) {
+            if (gameWorld.charWorldPos.y > lowerBoundViewPort and gameWorld.charWorldPos.y <= upperBoundViewPort) {
+                gameWorld.viewPort.y -= 1;
+            } else {
+                gameWorld.charRenderPos.y -= TILESIZE;
+            }
+            gameWorld.charWorldPos.y -= 1;
         }
-        gameWorld.charWorldPos.y -= 1;
     }
+
+    std.debug.print(
+        "After update viewPort: ({},{})\nAfter update characterPosition: ({d},{d})\n\n",
+        .{ gameWorld.viewPort.x, gameWorld.viewPort.y, gameWorld.charWorldPos.x, gameWorld.charWorldPos.y },
+    );
 }
 
 pub fn main() anyerror!void {
@@ -194,8 +216,8 @@ pub fn main() anyerror!void {
     const screenWidth = 1052;
     const screenHeight = 800;
 
-    // const windowPosX = -3000;
-    const windowPosX = 500;
+    const windowPosX = -3350;
+    // const windowPosX = 500;
     const windowPosY = 0;
 
     rl.initWindow(screenWidth, screenHeight, "Game");
