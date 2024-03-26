@@ -2,16 +2,14 @@
 
 const rl = @import("raylib");
 const std = @import("std");
-const znoise = @cImport({
-    @cInclude("FastNoiseLite.h");
-});
+const znoise = @import("znoise.zig");
 
 const DEBUGFLAG: u8 = 1;
 const TILESIZE: f32 = 32;
 const VIEWPORTWIDTH: usize = 25;
 const VIEWPORTHEIGHT: usize = 25;
-const MAPWIDTH: usize = 75;
-const MAPHEIGHT: usize = 75;
+const MAPWIDTH: usize = 625;
+const MAPHEIGHT: usize = 625;
 
 const Viewport = struct {
     width: usize,
@@ -44,10 +42,17 @@ const GameWorld = struct {
 
     fn init(allocator: std.mem.Allocator, viewPort: Viewport, width: usize, height: usize) !GameWorld {
         var tiles = try allocator.alloc([]Tile, height);
-        for (tiles) |*row| {
+        for (tiles, 0..) |*row, y| {
             row.* = try allocator.alloc(Tile, width);
-            for (row.*) |*tile| {
-                tile.* = Tile{ .terrain = .Grass };
+            for (row.*, 0..) |*tile, x| {
+                const noiseValue = znoise.noise(f32, .{
+                    .x = @as(f32, @floatFromInt(x)) * 0.08,
+                    .y = @as(f32, @floatFromInt(y)) * 0.08,
+                });
+
+                tile.* = Tile{ .terrain = if (noiseValue > 0.5) TerrainType.Forest else TerrainType.Grass };
+
+                // tile.* = Tile{ .terrain = .Grass };
             }
         }
 
@@ -145,6 +150,7 @@ fn renderDebugInfo(gameWorld: GameWorld) void {
 }
 
 fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
+    // TODO there is a bug where if you go the right edge of the screen and then back the viewport will not change
     const middleOfViewPort = (gameWorld.viewPort.width + 1) / 2;
     const lowerBoundViewPort = @as(f32, @floatFromInt(middleOfViewPort));
     const upperBoundViewPort = @as(f32, @floatFromInt(gameWorld.width - middleOfViewPort));
@@ -181,7 +187,9 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
 }
 
 pub fn main() anyerror!void {
-
+    var opts = znoise.Vec(f32){ .x = 1.0, .y = 2.0, .z = 0.5 };
+    const noiseValue = znoise.noise(f32, opts);
+    _ = noiseValue;
     // Initialization
     //--------------------------------------------------------------------------------------
     const screenWidth = 1052;
@@ -214,6 +222,9 @@ pub fn main() anyerror!void {
         .worldPosition = rl.Vector2.init(0, 0),
     };
     _ = character;
+
+    // Create Noise
+    //--------------------------------------------------------------------------------------
 
     gameWorld.tiles[1][1] = Tile{ .terrain = .Forest };
     gameWorld.tiles[2 + 25][2] = Tile{ .terrain = .Forest };

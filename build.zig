@@ -1,8 +1,6 @@
 const std = @import("std");
 const rl = @import("raylib-zig/build.zig");
 
-const CFlags = &.{};
-
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -25,26 +23,11 @@ pub fn build(b: *std.Build) !void {
         return;
     }
 
-    const znoise = b.createModule(.{ .source_file = .{ .path = "./zig-gamedev/libs/znoise/src/znoise.zig" } });
-
     const exe = b.addExecutable(.{ .name = "wastelands", .root_source_file = .{ .path = "src/main.zig" }, .optimize = optimize, .target = target });
-
-    exe.addModule("znoise", znoise);
 
     rl.link(b, exe, target, optimize);
     exe.addModule("raylib", raylib);
     exe.addModule("raylib-math", raylib_math);
-
-    // Add znoise library from zig-gamedev
-    //----------------------------------------------------------------------
-    exe.addCSourceFile(.{
-        .file = .{ .path = "libs/FastNoiseLite.c" },
-        .flags = CFlags,
-    });
-
-    exe.addIncludePath(.{
-        .path = "libs/include/",
-    });
 
     const run_cmd = b.addRunArtifact(exe);
     const run_step = b.step("run", "Run wastelands");
