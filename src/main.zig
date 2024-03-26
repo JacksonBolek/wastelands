@@ -8,8 +8,10 @@ const DEBUGFLAG: u8 = 1;
 const TILESIZE: f32 = 32;
 const VIEWPORTWIDTH: usize = 25;
 const VIEWPORTHEIGHT: usize = 25;
-const MAPWIDTH: usize = 625;
-const MAPHEIGHT: usize = 625;
+const MAPWIDTH: usize = 75;
+const MAPHEIGHT: usize = 75;
+const MOVETIMEDELAY: f64 = 0.1;
+var LASTMOVEUPDATETIME: f64 = 0.0;
 
 const Viewport = struct {
     width: usize,
@@ -187,9 +189,6 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
 }
 
 pub fn main() anyerror!void {
-    var opts = znoise.Vec(f32){ .x = 1.0, .y = 2.0, .z = 0.5 };
-    const noiseValue = znoise.noise(f32, opts);
-    _ = noiseValue;
     // Initialization
     //--------------------------------------------------------------------------------------
     const screenWidth = 1052;
@@ -240,28 +239,37 @@ pub fn main() anyerror!void {
     //--------------------------------------------------------------------------------------
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // State update
+        const currentTime = @as(f64, @floatFromInt(std.time.milliTimestamp()));
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_right) or
-            rl.isKeyPressed(rl.KeyboardKey.key_up) or
-            rl.isKeyPressed(rl.KeyboardKey.key_left) or
-            rl.isKeyPressed(rl.KeyboardKey.key_down))
-        {
-            var moveDir = rl.Vector2.init(0, 0);
+        if ((currentTime - LASTMOVEUPDATETIME) / 1000 > MOVETIMEDELAY) {
+            if (rl.isKeyPressed(rl.KeyboardKey.key_right) or
+                rl.isKeyPressed(rl.KeyboardKey.key_up) or
+                rl.isKeyPressed(rl.KeyboardKey.key_left) or
+                rl.isKeyPressed(rl.KeyboardKey.key_down) or
+                rl.isKeyDown(rl.KeyboardKey.key_right) or
+                rl.isKeyDown(rl.KeyboardKey.key_up) or
+                rl.isKeyDown(rl.KeyboardKey.key_left) or
+                rl.isKeyDown(rl.KeyboardKey.key_down))
+            {
+                var moveDir = rl.Vector2.init(0, 0);
 
-            if (rl.isKeyPressed(rl.KeyboardKey.key_right)) {
-                moveDir.x = 1;
-                moveDir.y = 0;
-            } else if (rl.isKeyPressed(rl.KeyboardKey.key_up)) {
-                moveDir.x = 0;
-                moveDir.y = -1;
-            } else if (rl.isKeyPressed(rl.KeyboardKey.key_left)) {
-                moveDir.x = -1;
-                moveDir.y = 0;
-            } else if (rl.isKeyPressed(rl.KeyboardKey.key_down)) {
-                moveDir.x = 0;
-                moveDir.y = 1;
+                if (rl.isKeyPressed(rl.KeyboardKey.key_right) or rl.isKeyDown(rl.KeyboardKey.key_right)) {
+                    moveDir.x = 1;
+                    moveDir.y = 0;
+                } else if (rl.isKeyPressed(rl.KeyboardKey.key_up) or rl.isKeyDown(rl.KeyboardKey.key_up)) {
+                    moveDir.x = 0;
+                    moveDir.y = -1;
+                } else if (rl.isKeyPressed(rl.KeyboardKey.key_left) or rl.isKeyDown(rl.KeyboardKey.key_left)) {
+                    moveDir.x = -1;
+                    moveDir.y = 0;
+                } else if (rl.isKeyPressed(rl.KeyboardKey.key_down) or rl.isKeyDown(rl.KeyboardKey.key_down)) {
+                    moveDir.x = 0;
+                    moveDir.y = 1;
+                }
+
+                LASTMOVEUPDATETIME = currentTime;
+                viewStateUpdate(&gameWorld, moveDir);
             }
-            viewStateUpdate(&gameWorld, moveDir);
         }
 
         // Render
