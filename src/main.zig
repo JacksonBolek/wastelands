@@ -3,14 +3,18 @@
 const rl = @import("raylib");
 const std = @import("std");
 const znoise = @import("znoise.zig");
+const worldgen = @import("terrain_gen.zig");
 
 const DEBUGFLAG: u8 = 1;
 const TILESIZE: f32 = 32;
 const VIEWPORTWIDTH: usize = 25;
 const VIEWPORTHEIGHT: usize = 25;
-const MAPWIDTH: usize = 75;
-const MAPHEIGHT: usize = 75;
-const MOVETIMEDELAY: f64 = 0.1;
+// Make sure to change if your computer is slow
+const MAPWIDTH: usize = 10001;
+const MAPHEIGHT: usize = 10001;
+//--------------------------------------------------------------------------------------
+
+const MOVETIMEDELAY: f64 = 0.01;
 var LASTMOVEUPDATETIME: f64 = 0.0;
 
 const Viewport = struct {
@@ -25,45 +29,38 @@ const Character = struct {
     worldPosition: rl.Vector2,
 };
 
-const TerrainType = enum {
-    Grass,
+const BiomeType = enum {
     Forest,
+    Desert,
+    Grassland,
+    Tundra,
 };
 
-const Tile = struct {
-    terrain: TerrainType,
+const TerrainType = enum {
+    TallGrass,
+    ShortGrass,
+    ThickForest,
+    ThinForest,
+    SandyRock,
+    Sand,
+    Tyga,
+    Snow,
 };
 
 const GameWorld = struct {
     width: usize,
     height: usize,
-    tiles: [][]Tile,
+    tiles: [][]worldgen.Tile,
     charWorldPos: rl.Vector2,
     charRenderPos: rl.Vector2,
     viewPort: Viewport,
 
     fn init(allocator: std.mem.Allocator, viewPort: Viewport, width: usize, height: usize) !GameWorld {
-        var tiles = try allocator.alloc([]Tile, height);
-        for (tiles, 0..) |*row, y| {
-            row.* = try allocator.alloc(Tile, width);
-            for (row.*, 0..) |*tile, x| {
-                const noiseValue = znoise.noise(f32, .{
-                    .x = @as(f32, @floatFromInt(x)) * 0.08,
-                    .y = @as(f32, @floatFromInt(y)) * 0.08,
-                });
-
-                tile.* = Tile{ .terrain = if (noiseValue > 0.5) TerrainType.Forest else TerrainType.Grass };
-
-                // tile.* = Tile{ .terrain = .Grass };
-            }
-        }
-
         return GameWorld{
             .width = width,
             .height = height,
-            .tiles = tiles,
+            .tiles = try worldgen.tileEcoGen(allocator, height, width),
             .charWorldPos = rl.Vector2.init(0, 0),
-            // .charRenderPos = rl.Vector2.init((((VIEWPORTWIDTH + 1) / 2) - 1) * TILESIZE + (TILESIZE / 2), (((VIEWPORTWIDTH + 1) / 2) - 1) * TILESIZE + (TILESIZE / 2)),
             .charRenderPos = rl.Vector2.init(16, 16),
             .viewPort = viewPort,
         };
@@ -87,18 +84,13 @@ const GameWorld = struct {
                 const screenX = @as(f32, @floatFromInt(x - viewStartX)) * tileSize;
                 const screenY = @as(f32, @floatFromInt(y - viewStartY)) * tileSize;
 
-                const color = switch (tile.terrain) {
-                    .Grass => rl.Color.green,
-                    .Forest => rl.Color.dark_green,
-                };
-
                 const rect = rl.Rectangle{
                     .x = screenX,
                     .y = screenY,
                     .width = tileSize,
                     .height = tileSize,
                 };
-                rl.drawRectangleRec(rect, color);
+                rl.drawRectangleRec(rect, tile.color);
                 rl.drawRectangleLinesEx(rect, 0.5, rl.Color.light_gray);
             }
         }
@@ -216,8 +208,8 @@ pub fn main() anyerror!void {
     const screenWidth = 1052;
     const screenHeight = 800;
 
-    const windowPosX = -3350;
-    // const windowPosX = 500;
+    // const windowPosX = -3350;
+    const windowPosX = 500;
     const windowPosY = 0;
 
     rl.initWindow(screenWidth, screenHeight, "Game");
@@ -243,19 +235,6 @@ pub fn main() anyerror!void {
         .worldPosition = rl.Vector2.init(0, 0),
     };
     _ = character;
-
-    // Create Noise
-    //--------------------------------------------------------------------------------------
-
-    gameWorld.tiles[1][1] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[2 + 25][2] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[3 + 25 * 2][3] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[4][4 + 25] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[5 + 25][5 + 25] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[6 + 25 * 2][6 + 25] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[7][7 + 25 * 2] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[8 + 25][8 + 25 * 2] = Tile{ .terrain = .Forest };
-    gameWorld.tiles[9 + 25 * 2][9 + 25 * 2] = Tile{ .terrain = .Forest };
 
     // Main game loop
     //--------------------------------------------------------------------------------------
