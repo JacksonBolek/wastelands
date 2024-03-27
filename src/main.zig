@@ -29,24 +29,6 @@ const Character = struct {
     worldPosition: rl.Vector2,
 };
 
-const BiomeType = enum {
-    Forest,
-    Desert,
-    Grassland,
-    Tundra,
-};
-
-const TerrainType = enum {
-    TallGrass,
-    ShortGrass,
-    ThickForest,
-    ThinForest,
-    SandyRock,
-    Sand,
-    Tyga,
-    Snow,
-};
-
 const GameWorld = struct {
     width: usize,
     height: usize,
