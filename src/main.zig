@@ -6,12 +6,12 @@ const znoise = @import("znoise.zig");
 const worldgen = @import("terrain_gen.zig");
 
 const DEBUGFLAG: u8 = 1;
-const TILESIZE: f32 = 32;
-const VIEWPORTWIDTH: usize = 25;
-const VIEWPORTHEIGHT: usize = 25;
+const TILESIZE: f32 = 64;
+const VIEWPORTWIDTH: usize = 21;
+const VIEWPORTHEIGHT: usize = 15;
 // Make sure to change if your computer is slow
-const MAPWIDTH: usize = 10001;
-const MAPHEIGHT: usize = 10001;
+const MAPWIDTH: usize = 101;
+const MAPHEIGHT: usize = 101;
 //--------------------------------------------------------------------------------------
 
 const MOVETIMEDELAY: f64 = 0.01;
@@ -24,10 +24,7 @@ const Viewport = struct {
     y: usize,
 };
 
-const Character = struct {
-    renderPosition: rl.Vector2,
-    worldPosition: rl.Vector2,
-};
+const Character = struct {};
 
 const GameWorld = struct {
     width: usize,
@@ -43,7 +40,7 @@ const GameWorld = struct {
             .height = height,
             .tiles = try worldgen.tileEcoGen(allocator, height, width),
             .charWorldPos = rl.Vector2.init(0, 0),
-            .charRenderPos = rl.Vector2.init(16, 16),
+            .charRenderPos = rl.Vector2.init(TILESIZE / 2, TILESIZE / 2),
             .viewPort = viewPort,
         };
     }
@@ -127,13 +124,16 @@ fn renderDebugInfo(gameWorld: GameWorld) void {
 
 fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
     // TODO there is a bug where if you go the right edge of the screen and then back the viewport will not change
-    const middleOfViewPort = ((gameWorld.viewPort.width + 1) / 2);
-    const lowerBoundViewPort = @as(f32, @floatFromInt(middleOfViewPort - 1));
-    const upperBoundViewPort = @as(f32, @floatFromInt(gameWorld.width - middleOfViewPort));
-    std.debug.print(
-        "upperBoundViewPort: {d}\nlowerBoundViewPort: {d}\nmiddleOfViewPort: {d}\n\n",
-        .{ upperBoundViewPort, lowerBoundViewPort, middleOfViewPort },
-    );
+    const midOfViewPortWidth = ((gameWorld.viewPort.width + 1) / 2);
+    const midOfViewPortHeight = ((gameWorld.viewPort.height + 1) / 2);
+    const lowerBoundViewPortHeight = @as(f32, @floatFromInt(midOfViewPortHeight - 1));
+    const upperBoundViewPortHeight = @as(f32, @floatFromInt(gameWorld.height - midOfViewPortHeight));
+    const lowerBoundViewPortWidth = @as(f32, @floatFromInt(midOfViewPortWidth - 1));
+    const upperBoundViewPortWidth = @as(f32, @floatFromInt(gameWorld.width - midOfViewPortWidth));
+    // std.debug.print(
+    //     "upperBoundViewPort: {d}\nlowerBoundViewPort: {d}\nmidOfViewPortWidth: {d}\n\n",
+    //     .{ upperBoundViewPort, lowerBoundViewPort, midOfViewPortWidth },
+    // );
 
     std.debug.print(
         "Before update viewPort: ({},{})\nBefore update characterPosition: ({d},{d})\n\n",
@@ -142,7 +142,9 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
 
     if (moveDir.x == 1) {
         if (gameWorld.charWorldPos.x != @as(f32, @floatFromInt(gameWorld.width - 1))) {
-            if (gameWorld.charWorldPos.x >= lowerBoundViewPort and gameWorld.charWorldPos.x < upperBoundViewPort) {
+            if (gameWorld.charWorldPos.x >= lowerBoundViewPortWidth and
+                gameWorld.charWorldPos.x < upperBoundViewPortWidth)
+            {
                 gameWorld.viewPort.x += 1;
             } else {
                 gameWorld.charRenderPos.x += TILESIZE;
@@ -151,7 +153,9 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
         }
     } else if (moveDir.y == 1) {
         if (gameWorld.charWorldPos.y != @as(f32, @floatFromInt(gameWorld.height - 1))) {
-            if (gameWorld.charWorldPos.y >= lowerBoundViewPort and gameWorld.charWorldPos.y < upperBoundViewPort) {
+            if (gameWorld.charWorldPos.y >= lowerBoundViewPortHeight and
+                gameWorld.charWorldPos.y < upperBoundViewPortHeight)
+            {
                 gameWorld.viewPort.y += 1;
             } else {
                 gameWorld.charRenderPos.y += TILESIZE;
@@ -160,7 +164,9 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
         }
     } else if (moveDir.x == -1) {
         if (gameWorld.charWorldPos.x != 0) {
-            if (gameWorld.charWorldPos.x > lowerBoundViewPort and gameWorld.charWorldPos.x <= upperBoundViewPort) {
+            if (gameWorld.charWorldPos.x > lowerBoundViewPortWidth and
+                gameWorld.charWorldPos.x <= upperBoundViewPortWidth)
+            {
                 gameWorld.viewPort.x -= 1;
             } else {
                 gameWorld.charRenderPos.x -= TILESIZE;
@@ -169,7 +175,9 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
         }
     } else if (moveDir.y == -1) {
         if (gameWorld.charWorldPos.y != 0) {
-            if (gameWorld.charWorldPos.y > lowerBoundViewPort and gameWorld.charWorldPos.y <= upperBoundViewPort) {
+            if (gameWorld.charWorldPos.y > lowerBoundViewPortHeight and
+                gameWorld.charWorldPos.y <= upperBoundViewPortHeight)
+            {
                 gameWorld.viewPort.y -= 1;
             } else {
                 gameWorld.charRenderPos.y -= TILESIZE;
@@ -187,12 +195,12 @@ fn viewStateUpdate(gameWorld: *GameWorld, moveDir: rl.Vector2) void {
 pub fn main() anyerror!void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const screenWidth = 1052;
-    const screenHeight = 800;
+    const screenWidth = TILESIZE * VIEWPORTWIDTH;
+    const screenHeight = TILESIZE * VIEWPORTHEIGHT;
 
-    // const windowPosX = -3350;
-    const windowPosX = 500;
-    const windowPosY = 0;
+    const windowPosX = -3350;
+    //const windowPosX = 500;
+    const windowPosY = -200;
 
     rl.initWindow(screenWidth, screenHeight, "Game");
     defer rl.closeWindow(); // Close window and OpenGL context
@@ -212,11 +220,8 @@ pub fn main() anyerror!void {
     var gameWorld = try GameWorld.init(allocator, viewPort, MAPWIDTH, MAPHEIGHT);
     defer gameWorld.deinit(allocator);
 
-    var character = Character{
-        .renderPosition = rl.Vector2.init(16, 16),
-        .worldPosition = rl.Vector2.init(0, 0),
-    };
-    _ = character;
+    const grassTexture = rl.loadTexture("resources/terrain/grass_2.png");
+    _ = grassTexture;
 
     // Main game loop
     //--------------------------------------------------------------------------------------
@@ -259,12 +264,14 @@ pub fn main() anyerror!void {
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        rl.clearBackground(rl.Color.white);
+        rl.clearBackground(rl.Color.ray_white);
 
         gameWorld.render(TILESIZE);
 
-        rl.drawCircleV(gameWorld.charRenderPos, 12, rl.Color.red);
+        // rl.drawTexture(grassTexture, 0, 0, rl.Color.white);
 
-        renderDebugInfo(gameWorld);
+        rl.drawCircleV(gameWorld.charRenderPos, TILESIZE / 3 + 1, rl.Color.red);
+
+        //renderDebugInfo(gameWorld);
     }
 }
