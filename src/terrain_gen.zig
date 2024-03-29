@@ -26,6 +26,7 @@ pub const Tile = struct {
     biome: BiomeType,
     terrain: TerrainType,
     color: rl.Color,
+    elevation: f32,
 };
 
 fn getTileColor(terrain: TerrainType) rl.Color {
@@ -81,18 +82,49 @@ fn getTileColor(terrain: TerrainType) rl.Color {
     };
 }
 
+fn getElevationColor(elevation: f32) rl.Color {
+    var color = rl.Color.blank;
+    // std.debug.print("elevation value: {d:.}\n\n", .{elevation});
+    if (elevation < 0.08) {
+        color = rl.Color.black;
+    } else if (elevation < 0.1) {
+        color = rl.Color.dark_gray;
+    } else if (elevation < 0.2) {
+        color = rl.Color.gray;
+    } else if (elevation < 0.25) {
+        color = rl.Color.dark_brown;
+    } else if (elevation < 0.3) {
+        color = rl.Color.brown;
+    } else if (elevation < 0.35) {
+        color = rl.Color.dark_blue;
+    } else if (elevation < 0.4) {
+        color = rl.Color.blue;
+    } else {
+        color = rl.Color.green;
+    }
+    return color;
+}
+
+fn generateElevation(x: f32, y: f32) f32 {
+    const noiseValue = znoise.noise(f32, .{
+        .x = x * 0.01,
+        .y = y * 0.01,
+    });
+    return noiseValue;
+}
+
 fn generateBiome(x: usize, y: usize) BiomeType {
     const noiseValue = znoise.noise(f32, .{
-        .x = @as(f32, @floatFromInt(x)) * 0.02,
-        .y = @as(f32, @floatFromInt(y)) * 0.02,
+        .x = @as(f32, @floatFromInt(x)) * 0.08,
+        .y = @as(f32, @floatFromInt(y)) * 0.08,
     });
 
     if (noiseValue > 0.75) {
         SUM += 1;
-        std.debug.print("Noisevalue: {d:.}\nRunning Total: {d}\n\n", .{
-            noiseValue,
-            SUM,
-        });
+        // std.debug.print("Noisevalue: {d:.}\nRunning Total: {d}\n\n", .{
+        //     noiseValue,
+        //     SUM,
+        // });
     }
 
     if (noiseValue <= 0.25) {
@@ -102,7 +134,6 @@ fn generateBiome(x: usize, y: usize) BiomeType {
     } else if (noiseValue <= 0.75) {
         return BiomeType.Desert;
     } else {
-        std.debug.print("tundra biome tile assigned", .{});
         return BiomeType.Tundra;
     }
 }
@@ -126,10 +157,20 @@ pub fn tileEcoGen(allocator: std.mem.Allocator, height: usize, width: usize) ![]
     for (tiles, 0..) |*row, y| {
         row.* = try allocator.alloc(Tile, width);
         for (row.*, 0..) |*tile, x| {
+            const xFl = @as(f32, @floatFromInt(x));
+            const yFl = @as(f32, @floatFromInt(y));
+            // std.debug.print("x y coords: ({d:.},{d:.})\n", .{ xFl, yFl });
             const biome = generateBiome(x, y);
             const terrain = generateTerrain(biome, x, y);
-            const color = getTileColor(terrain);
-            tile.* = Tile{ .biome = biome, .terrain = terrain, .color = color };
+            //const color = getTileColor(terrain);
+            const elevation = generateElevation(xFl, yFl);
+            const color = getElevationColor(elevation);
+            tile.* = Tile{
+                .biome = biome,
+                .terrain = terrain,
+                .color = color,
+                .elevation = elevation,
+            };
         }
     }
     return tiles;

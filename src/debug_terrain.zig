@@ -1,17 +1,15 @@
-// raylib-zig (c) Nikolas Wipper 2023
-
 const rl = @import("raylib");
 const std = @import("std");
 const znoise = @import("znoise.zig");
 const worldgen = @import("terrain_gen.zig");
 
 const DEBUGFLAG: u8 = 1;
-const TILESIZE: f32 = 64;
-const VIEWPORTWIDTH: usize = 21;
-const VIEWPORTHEIGHT: usize = 15;
+const TILESIZE: f32 = 1;
+const VIEWPORTWIDTH: usize = 2561;
+const VIEWPORTHEIGHT: usize = 1205;
 // Make sure to change if your computer is slow
-const MAPWIDTH: usize = 101;
-const MAPHEIGHT: usize = 101;
+const MAPWIDTH: usize = 1001;
+const MAPHEIGHT: usize = 1001;
 //--------------------------------------------------------------------------------------
 
 const MOVETIMEDELAY: f64 = 0.01;
@@ -23,8 +21,6 @@ const Viewport = struct {
     x: usize,
     y: usize,
 };
-
-const Character = struct {};
 
 const GameWorld = struct {
     width: usize,
@@ -70,7 +66,7 @@ const GameWorld = struct {
                     .height = tileSize,
                 };
                 rl.drawRectangleRec(rect, tile.color);
-                rl.drawRectangleLinesEx(rect, 0.5, rl.Color.light_gray);
+                // rl.drawRectangleLinesEx(rect, 0.3, rl.Color.light_gray);
             }
         }
     }
@@ -198,11 +194,11 @@ pub fn main() anyerror!void {
     const screenWidth = TILESIZE * VIEWPORTWIDTH;
     const screenHeight = TILESIZE * VIEWPORTHEIGHT;
 
-    const windowPosX = -3350;
-    //const windowPosX = 500;
+    // const windowPosX = -3350;
+    const windowPosX = 100;
     const windowPosY = -200;
     // rl.setConfigFlags(rl.ConfigFlags.flag_window_resizable);
-    rl.initWindow(screenWidth, screenHeight, "Game");
+    rl.initWindow(screenWidth, screenHeight, "debug_terrain");
     defer rl.closeWindow(); // Close window and OpenGL context
 
     rl.setWindowPosition(windowPosX, windowPosY);
@@ -220,16 +216,13 @@ pub fn main() anyerror!void {
     var gameWorld = try GameWorld.init(allocator, viewPort, MAPWIDTH, MAPHEIGHT);
     defer gameWorld.deinit(allocator);
 
-    const grassTexture = rl.loadTexture("resources/terrain/grass_2.png");
-    _ = grassTexture;
-
     // Main game loop
     //--------------------------------------------------------------------------------------
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // State update
-        const currentTime = @as(f64, @floatFromInt(std.time.milliTimestamp()));
+        const startStateUpdateTime = @as(f64, @floatFromInt(std.time.milliTimestamp()));
 
-        if ((currentTime - LASTMOVEUPDATETIME) / 1000 > MOVETIMEDELAY) {
+        if ((startStateUpdateTime - LASTMOVEUPDATETIME) / 1000 > MOVETIMEDELAY) {
             if (rl.isKeyPressed(rl.KeyboardKey.key_right) or
                 rl.isKeyPressed(rl.KeyboardKey.key_up) or
                 rl.isKeyPressed(rl.KeyboardKey.key_left) or
@@ -255,7 +248,7 @@ pub fn main() anyerror!void {
                     moveDir.y = 1;
                 }
 
-                LASTMOVEUPDATETIME = currentTime;
+                LASTMOVEUPDATETIME = startStateUpdateTime;
                 viewStateUpdate(&gameWorld, moveDir);
             }
         }
@@ -266,9 +259,12 @@ pub fn main() anyerror!void {
 
         rl.clearBackground(rl.Color.ray_white);
 
+        const renderStartTime = @as(f64, @floatFromInt(std.time.milliTimestamp()));
+        _ = renderStartTime;
         gameWorld.render(TILESIZE);
-
-        // rl.drawTexture(grassTexture, 0, 0, rl.Color.white);
+        const renderEndTime = @as(f64, @floatFromInt(std.time.milliTimestamp()));
+        _ = renderEndTime;
+        // std.debug.print("Render Time(s): {d:.}\n", .{(renderEndTime - renderStartTime) / 1000});
 
         rl.drawCircleV(gameWorld.charRenderPos, TILESIZE / 3 + 1, rl.Color.red);
 
